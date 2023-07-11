@@ -3,13 +3,16 @@
 from struct import pack, calcsize
 import base64
 import cmd
+from typing import List, Tuple
 import zlib
+import sys
 import os
+
 
 class BeaconPack:
     def __init__(self):
         self._buffer = b''
-        self._size = 0 #TODO: Just use len(buffer) instead?
+        self._size = 0  # TODO: Just use len(buffer) instead?
 
     @property
     def buffer(self):
@@ -44,19 +47,20 @@ class BeaconPack:
         self._buffer += pack(fmt, len(data), data)
         self._size += calcsize(fmt)
 
+
 class MainLoop(cmd.Cmd):
     def __init__(self):
         cmd.Cmd.__init__(self)
         self.BeaconPack = BeaconPack()
         self.intro = "BOF parameter encoder"
         self.prompt = "CMD> "
-    
+
     def do_addWString(self, text):
         '''addWString String here
         Append the wide string to the text.
         '''
         self.BeaconPack.addWstr(text)
-    
+
     def do_addString(self, text):
         '''addString string here
         Append the utf-8 string here.
@@ -69,7 +73,7 @@ class MainLoop(cmd.Cmd):
         print(f"Argument buffer: {len(buffer)} bytes")
         print(f"Base64 encoded: {len(bts)} chars")
         print(bts)
-    
+
     # TODO: Only keep generate, auto-compress if more efficient, make compression optional
     def do_generate(self, text):
         '''generate
@@ -84,7 +88,7 @@ class MainLoop(cmd.Cmd):
         print(len(buff))
         bts = b'GZ' + pack("<i", len(buff)) + zlib.compress(buff)
         MainLoop._b64print(bts)
-    
+
     def do_addInt(self, text):
         '''addInt integer
         Add an int32_t to the buffer
@@ -114,19 +118,61 @@ class MainLoop(cmd.Cmd):
         except Exception as e:
             print(e.args)
             print("Failed to add file to buffer\n")
-    
+
     def do_reset(self, text):
         '''reset
         Reset the buffer here.
         '''
         self.BeaconPack._buffer = b''
         self.BeaconPack._size = 0
-    
+
     def do_exit(self, text):
         '''exit
         Exit the console
         '''
         return True
+
+
+def process_args(args: List[str]) -> Tuple[bool, str]:
+    pack = BeaconPack()
+
+    def tryaction(fn, errortext) -> bool:
+        try:
+            fn()
+            return True
+        except Exception as e:
+            print(errortext + ": " + str(e.args))
+            return False
+
+    def process_arg(index:int, arg:str) -> bool:
+        prefix = arg[0]
+        value = arg[2:]
+        print(f't:{prefix}, v:"{value}"')
+
+        if not prefix in ["b","i","s","z","Z","f"]:
+            print(f'Argument #{index+1}: Invalid argument type "{prefix}"')
+            return False
+
+        if len(value) == 0:
+            print(f"Argument #{index+1}: Empty value")
+            return False
+
+        if  (prefix == "b" and not tryaction(lambda: pack.addstr(base64.b64decode(value).decode()), f"Argument #{index+1}: Failed to base64 decode binary data")) or \
+            (prefix == "i" and not tryaction(lambda: pack.addint(int(value)), f"Argument #{index+1}: Failed to convert arg to int")) or \
+            (prefix == "s" and not tryaction(lambda: pack.addshort(int(value)), f"Argument #{index+1}: Failed to convert arg to short")) or \
+            (prefix == "z" and not tryaction(lambda: pack.addstr(value), f"Argument #{index+1}: Failed to add string")) or \
+            (prefix == "Z" and not tryaction(lambda: pack.addWstr(value), f"Argument #{index+1}: Failed to add string")) or \
+            (prefix == "f" and not tryaction(lambda: pack.addFile(value), f"Argument #{index+1}: Failed to add file")):
+            return False
+        
+        return True
+    
+    for i, arg in enumerate(args):
+        if not process_arg(i, arg):
+            return [False, ""]
+        
+    return [True, base64.b64encode(pack.buffer).decode("ascii")]
+
 
 if __name__ == "__main__":
     print(r"""
@@ -136,6 +182,11 @@ if __name__ == "__main__":
 \___/___/____/____/_/|_| /____/\____/_/   /_/ |_/_/|_|\___/___/  \___/___/_/|_/___/_/|_/_/ |_/_/  \____/_/|_| 
     by NVISO, based on https://github.com/trustedsec/COFFLoader/blob/main/beacon_generate.py
 """)
-    cmdloop = MainLoop()
-    cmdloop.do_help("")
-    cmdloop.cmdloop()
+    _args = sys.argv[1:]
+    if _args:
+        res, txt = process_args(_args)
+        if res: print(txt)
+    else:
+        cmdloop = MainLoop()
+        cmdloop.do_help("")
+        cmdloop.cmdloop()
