@@ -147,7 +147,6 @@ def process_args(args: List[str]) -> Tuple[bool, str]:
     def process_arg(index:int, arg:str) -> bool:
         prefix = arg[0]
         value = arg[2:]
-        print(f't:{prefix}, v:"{value}"')
 
         if not prefix in ["b","i","s","z","Z","f"]:
             print(f'Argument #{index+1}: Invalid argument type "{prefix}"')

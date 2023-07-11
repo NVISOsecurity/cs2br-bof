@@ -87,6 +87,11 @@ CgAAAGxvY2FsaG9zdAA=
 CMD> exit
 ```
 
+Alternatively, you can use `encode_args.py` non-interactively by passing pairs of `<type>:<value>` arguments to it, e.g.:
+```
+./encode_args.py "z:my first string" "Z:here's a wide-string" i:420 s:69
+EAAAAG15IGZpcnN0IHN0cmluZwAqAAAAaABlAHIAZQAnAHMAIABhACAAdwBpAGQAZQAtAHMAdAByAGkAbgBnAAAApAEAAEUA
+```
 
 # Credits
 
