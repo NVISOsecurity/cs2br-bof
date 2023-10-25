@@ -48,6 +48,7 @@ class BeaconPack:
         self._size += calcsize(fmt)
 
 
+
 class MainLoop(cmd.Cmd):
     def __init__(self):
         cmd.Cmd.__init__(self)
@@ -119,6 +120,29 @@ class MainLoop(cmd.Cmd):
             print(e.args)
             print("Failed to add file to buffer\n")
 
+    def do_show(self, text):
+        '''show
+        Prints a hexdump of the current buffer'''
+        buff = self.BeaconPack.buffer
+        
+        def toascii(byte: int):
+            if byte <= 0 or byte >= 128:
+                return "." 
+            _str = bytes([byte]).decode("ascii")
+            if not _str.isprintable() or _str.isspace():
+                return "."
+            
+            return _str
+
+        width = 32
+        for line, block in enumerate(buff[i: i+width] for i in range(0, len(buff), width)):
+            _hex =   ' '.join([hex(b)[2:].rjust(2, '0') for b in block] + ["  " for _ in range(width - len(block))])
+            _ascii = ''.join([toascii(b) for b in block] + [' ' for _ in range(width - len(block))])
+            print("@{} | {} | {}".format(
+                hex(line*width)[2:].rjust(8, '0'),
+                _hex,
+                _ascii))
+
     def do_reset(self, text):
         '''reset
         Reset the buffer here.
@@ -152,8 +176,8 @@ def process_args(args: List[str]) -> Tuple[bool, str]:
             print(f'Argument #{index+1}: Invalid argument type "{prefix}"')
             return False
 
-        if len(value) == 0:
-            print(f"Argument #{index+1}: Empty value")
+        if len(value) == 0 and not prefix in ["z", "Z"]:
+            print(f"Argument #{index+1}: Empty value not allowed for prefix {prefix}")
             return False
 
         if  (prefix == "b" and not tryaction(lambda: pack.addstr(base64.b64decode(value).decode()), f"Argument #{index+1}: Failed to base64 decode binary data")) or \
