@@ -122,7 +122,13 @@ void   BeaconCleanupProcess(PROCESS_INFORMATION* pInfo) { } /* TODO: Implement *
 /* Utility Functions */
 BOOL   toWideChar(char* src, wchar_t* dst, int max) { } /* TODO: Implement */
 
+#ifdef _MSC_VER
+#pragma data_seg(".data")
+__declspec(allocate(".data")) WCHAR** _dispatch = 0;
+#pragma data_seg()
+#else
 WCHAR** _dispatch __attribute__((section(".data"))) = 0;
+#endif
 
 /*	Custom Cobalt Strike BOF API
 	implementations based on trustedsec's COFFLoader
@@ -210,7 +216,16 @@ void BeaconFormatAppend(formatp* format, char* text, int len) {
 
 /* MSVCRT import */
 // TODO: Make these optional (breaks outputs though)
-WINBASEAPI int __cdecl MSVCRT$vsnprintf(char * __restrict__ d,size_t n,const char * __restrict__ format,va_list arg);
+#include <stdarg.h>
+
+#ifdef _MSC_VER
+#define RESTRICT __restrict
+#else
+#define RESTRICT __restrict__
+#endif
+
+WINBASEAPI int __cdecl MSVCRT$vsnprintf(char * RESTRICT d, size_t n, const char * RESTRICT format, va_list arg);
+
 
 void BeaconFormatPrintf(formatp* format, char* fmt, ...) {
 	if (format == NULL) return;
