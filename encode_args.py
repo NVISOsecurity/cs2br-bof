@@ -16,7 +16,7 @@ class BeaconPack:
 
     @property
     def buffer(self):
-        return self._buffer
+        return pack("<L", self._size) + self._buffer
 
     def addshort(self, short):
         self._buffer += pack("<h", short)
@@ -46,7 +46,6 @@ class BeaconPack:
         fmt = "<L{}s".format(len(data))
         self._buffer += pack(fmt, len(data), data)
         self._size += calcsize(fmt)
-
 
 
 class MainLoop(cmd.Cmd):
@@ -124,20 +123,22 @@ class MainLoop(cmd.Cmd):
         '''show
         Prints a hexdump of the current buffer'''
         buff = self.BeaconPack.buffer
-        
+
         def toascii(byte: int):
             if byte <= 0 or byte >= 128:
-                return "." 
+                return "."
             _str = bytes([byte]).decode("ascii")
             if not _str.isprintable() or _str.isspace():
                 return "."
-            
+
             return _str
 
         width = 32
         for line, block in enumerate(buff[i: i+width] for i in range(0, len(buff), width)):
-            _hex =   ' '.join([hex(b)[2:].rjust(2, '0') for b in block] + ["  " for _ in range(width - len(block))])
-            _ascii = ''.join([toascii(b) for b in block] + [' ' for _ in range(width - len(block))])
+            _hex = ' '.join([hex(b)[2:].rjust(2, '0')
+                            for b in block] + ["  " for _ in range(width - len(block))])
+            _ascii = ''.join([toascii(b) for b in block] +
+                             [' ' for _ in range(width - len(block))])
             print("@{} | {} | {}".format(
                 hex(line*width)[2:].rjust(8, '0'),
                 _hex,
@@ -168,32 +169,33 @@ def process_args(args: List[str]) -> Tuple[bool, str]:
             print(errortext + ": " + str(e.args))
             return False
 
-    def process_arg(index:int, arg:str) -> bool:
+    def process_arg(index: int, arg: str) -> bool:
         prefix = arg[0]
         value = arg[2:]
 
-        if not prefix in ["b","i","s","z","Z","f"]:
+        if not prefix in ["b", "i", "s", "z", "Z", "f"]:
             print(f'Argument #{index+1}: Invalid argument type "{prefix}"')
             return False
 
         if len(value) == 0 and not prefix in ["z", "Z"]:
-            print(f"Argument #{index+1}: Empty value not allowed for prefix {prefix}")
+            print(f"Argument #{
+                  index+1}: Empty value not allowed for prefix {prefix}")
             return False
 
-        if  (prefix == "b" and not tryaction(lambda: pack.addstr(base64.b64decode(value).decode()), f"Argument #{index+1}: Failed to base64 decode binary data")) or \
+        if (prefix == "b" and not tryaction(lambda: pack.addstr(base64.b64decode(value).decode()), f"Argument #{index+1}: Failed to base64 decode binary data")) or \
             (prefix == "i" and not tryaction(lambda: pack.addint(int(value)), f"Argument #{index+1}: Failed to convert arg to int")) or \
             (prefix == "s" and not tryaction(lambda: pack.addshort(int(value)), f"Argument #{index+1}: Failed to convert arg to short")) or \
             (prefix == "z" and not tryaction(lambda: pack.addstr(value), f"Argument #{index+1}: Failed to add string")) or \
             (prefix == "Z" and not tryaction(lambda: pack.addWstr(value), f"Argument #{index+1}: Failed to add string")) or \
-            (prefix == "f" and not tryaction(lambda: pack.addFile(value), f"Argument #{index+1}: Failed to add file")):
+                (prefix == "f" and not tryaction(lambda: pack.addFile(value), f"Argument #{index+1}: Failed to add file")):
             return False
-        
+
         return True
-    
+
     for i, arg in enumerate(args):
         if not process_arg(i, arg):
             return [False, ""]
-        
+
     return [True, base64.b64encode(pack.buffer).decode("ascii")]
 
 
@@ -208,7 +210,8 @@ if __name__ == "__main__":
     _args = sys.argv[1:]
     if _args:
         res, txt = process_args(_args)
-        if res: print(txt)
+        if res:
+            print(txt)
     else:
         cmdloop = MainLoop()
         cmdloop.do_help("")
