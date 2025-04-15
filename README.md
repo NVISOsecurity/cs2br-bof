@@ -1,5 +1,10 @@
 # CS2BR BOF
 
+> [!WARNING]
+> **Disclaimer:** This repository, including all code, scripts, and documentation contained herein, is provided by NVISO exclusively for educational and informational purposes. The contents of this repository are intended to be used solely as a learning resource. The authors of this repository expressly disclaim any responsibility for any misuse or unintended application of the tools, code, or information provided within this repository.
+> Users are solely responsible for ensuring that their use of the repository complies with applicable laws and regulations. The authors of this repository do not provide any warranties or guarantees regarding the accuracy, completeness, or suitability of the contents for any particular purpose.
+> If you do not agree with these terms, you are advised not to use or access this repository.
+
 You would like to execute BOFs written for Cobalt Strike in Brute Ratel C4? Look no further, we got you covered! CS2BR implements a compatibility-layer that make CS BOFs use the BRC4 API. This allows you to use the vast landscape that is BOFs in BRC4.
 
 _Please read about its [caveats](#caveats) before using CS2BR._
